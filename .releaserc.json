@@ -39,9 +39,12 @@
         {
           "assets": [
             {
-              "path": "test-provenance.intoto.jsonl",
+              "path": "attestation.intoto.jsonl",
               "label": "test-provenance-${nextRelease.gitTag}.intoto.jsonl",
               "name": "test-provenance-${nextRelease.gitTag}.intoto.jsonl"
+            },
+            {
+              "path": "test*.txt"
             }
           ]
         }
