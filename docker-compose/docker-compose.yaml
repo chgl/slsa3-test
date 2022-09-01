@@ -1,0 +1,91 @@
+services:
+  list:
+    image: ghcr.io/miracum/recruit/list:v2.15.6@sha256:9c9ed72b32857cb1cccabc76a4d6fc75e7e9ea7359e02f51869ac91b9cccfa28
+    restart: unless-stopped
+    ipc: none
+    security_opt:
+      - "no-new-privileges:true"
+    cap_drop:
+      - ALL
+    ports:
+      - "127.0.0.1:38080:8080"
+    read_only: true
+    privileged: false
+    environment:
+      JAEGER_SERVICE_NAME: recruit-list
+      FHIR_URL: ${FHIR_URL:?}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:?}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:?}
+      KEYCLOAK_AUTH_URL: ${KEYCLOAK_AUTH_URL:?}
+      KEYCLOAK_DISABLED: ${KEYCLOAK_DISABLED:-false}
+      DE_PSEUDONYMIZATION_ENABLED: ${DE_PSEUDONYMIZATION_ENABLED:-false}
+      DE_PSEUDONYMIZATION_SERVICE_URL: ${DE_PSEUDONYMIZATION_SERVICE_URL:-""}
+      DE_PSEUDONYMIZATION_API_KEY: ${DE_PSEUDONYMIZATION_API_KEY:-""}
+      HIDE_DEMOGRAPHICS: ${HIDE_DEMOGRAPHICS:-"false"}
+      HIDE_LAST_VISIT: ${HIDE_LAST_VISIT:-"false"}
+      HIDE_EHR_BUTTON: ${HIDE_EHR_BUTTON:-"false"}
+      RULES_FILE_PATH: /etc/rules.yaml
+    volumes:
+      - ${NOTIFY_RULES_CONFIG_PATH:?}:/etc/rules.yaml:ro
+
+  query:
+    image: ghcr.io/miracum/recruit/query:v3.16.4@sha256:0080bef593de3e4d535cfcf93815588dbc9b6f07bd18c48770bce5d4f1fc2f65
+    restart: unless-stopped
+    ipc: none
+    security_opt:
+      - "no-new-privileges:true"
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    privileged: false
+    environment:
+      JAEGER_SERVICE_NAME: recruit-query
+      CAMEL_HEALTH_ENABLED: "false"
+      FHIR_URL: ${FHIR_URL:?}
+      OMOP_JDBCURL: ${OMOP_JDBCURL:?}
+      OMOP_USERNAME: ${OMOP_USERNAME:?}
+      OMOP_PASSWORD: ${OMOP_PASSWORD:?}
+      OMOP_RESULTSSCHEMA: ${OMOP_RESULTSSCHEMA:?}
+      OMOP_CDMSCHEMA: ${OMOP_CDMSCHEMA:?}
+      QUERY_WEBAPI_BASE_URL: ${ATLAS_URL:?}
+      ATLAS_DATASOURCE: ${ATLAS_DATASOURCE:?}
+      QUERY_SCHEDULE_UNIXCRON: ${QUERY_SCHEDULE_UNIXCRON:?}
+      QUERY_SELECTOR_MATCHLABELS: ${QUERY_SELECTOR_MATCHLABELS:?}
+      QUERY_EXCLUDEPATIENTPARAMETERS_DEMOGRAPHICS: ${HIDE_DEMOGRAPHICS:-false}
+      QUERY_EXCLUDEPATIENTPARAMETERS_ENCOUNTER: ${HIDE_LAST_VISIT:-false}
+      OPENTRACING_JAEGER_ENABLED: ${OPENTRACING_JAEGER_ENABLED:-false}
+      QUERY_WEBAPI_AUTH_ENABLED: ${QUERY_WEBAPI_AUTH_ENABLED:-false}
+      QUERY_WEBAPI_AUTH_LOGIN_PATH: ${QUERY_WEBAPI_AUTH_LOGIN_PATH:-"/user/login/db"}
+      QUERY_WEBAPI_AUTH_USERNAME: ${QUERY_WEBAPI_AUTH_USERNAME:-""}
+      QUERY_WEBAPI_AUTH_PASSWORD: ${QUERY_WEBAPI_AUTH_PASSWORD:-""}
+      QUERY_APPEND_RECOMMENDATIONS_TO_EXISTING_LIST: ${QUERY_APPEND_RECOMMENDATIONS_TO_EXISTING_LIST:-false}
+      QUERY_FORCE_UPDATE_SCREENING_LIST: ${QUERY_FORCE_UPDATE_SCREENING_LIST:-false}
+      QUERY_ONLY_CREATE_PATIENTS_IF_NOT_EXIST: ${QUERY_ONLY_CREATE_PATIENTS_IF_NOT_EXIST:-false}
+      QUERY_COHORTSIZETHRESHOLD: ${QUERY_COHORTSIZETHRESHOLD:-100}
+
+  notify:
+    image: ghcr.io/miracum/recruit/notify:v3.2.5@sha256:ce34fbcff8564ab856579837d7ced1dcbc8d2ee105f2bccbf2a2e6107a84e41d
+    restart: unless-stopped
+    ipc: none
+    security_opt:
+      - "no-new-privileges:true"
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    privileged: false
+    environment:
+      JAEGER_SERVICE_NAME: recruit-notify
+      FHIR_URL: ${FHIR_URL:?}
+      NOTIFY_MAILER_LINKTEMPLATE: ${NOTIFY_MAILER_LINKTEMPLATE:?}
+      NOTIFY_MAILER_FROM: ${NOTIFY_MAILER_FROM:?}
+      WEBHOOK_ENDPOINT: ${NOTIFY_WEBHOOK_ENDPOINT:?}
+      SPRING_MAIL_HOST: ${NOTIFY_MAIL_HOST:?}
+      SPRING_MAIL_PORT: ${NOTIFY_MAIL_SMTP_PORT:?}
+      SPRING_MAIL_USERNAME: ${NOTIFY_MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${NOTIFY_MAIL_PASSWORD}
+    volumes:
+      - ${NOTIFY_RULES_CONFIG_PATH:?}:/opt/notify/config/application.yml:ro

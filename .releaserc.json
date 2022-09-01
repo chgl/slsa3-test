@@ -40,11 +40,18 @@
           "assets": [
             {
               "path": "attestation.intoto.jsonl",
-              "label": "test-provenance-${nextRelease.gitTag}.intoto.jsonl",
-              "name": "test-provenance-${nextRelease.gitTag}.intoto.jsonl"
+              "label": "provenance-${nextRelease.gitTag}.intoto.jsonl",
+              "name": "provenance-${nextRelease.gitTag}.intoto.jsonl"
             },
             {
-              "path": "test*.txt"
+              "path": "recruit-docker-compose.tar.gz",
+              "label": "recruit-docker-compose-${nextRelease.gitTag}.tar.gz",
+              "name": "recruit-docker-compose-${nextRelease.gitTag}.tar.gz"
+            },
+            {
+              "path": "recruit-container-sboms.tar.gz",
+              "label": "recruit-container-sboms-${nextRelease.gitTag}.tar.gz",
+              "name": "recruit-container-sboms-${nextRelease.gitTag}.tar.gz"
             }
           ]
         }
