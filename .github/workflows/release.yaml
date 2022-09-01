@@ -17,6 +17,7 @@ jobs:
         run: |
           mkdir -p dist/
           cp test.txt dist/
+          cp README.md dist/
 
       - name: Generate SLSA subject
         id: hash
