@@ -75,22 +75,23 @@ jobs:
     with:
       base64-subjects: "${{ needs.prepare-artifacts.outputs.hashes }}"
       compile-generator: true
+      upload-assets: true
 
-  upload-provenance-to-release:
-    needs: [provenance]
-    permissions:
-      contents: write
-    runs-on: ubuntu-22.04
-    if: ${{ github.event_name == 'release' }}
-    steps:
-      - name: Download attestation
-        uses: actions/download-artifact@v3
-        with:
-          name: "${{ needs.provenance.outputs.attestation-name }}"
+  # upload-provenance-to-release:
+  #   needs: [provenance]
+  #   permissions:
+  #     contents: write
+  #   runs-on: ubuntu-22.04
+  #   if: ${{ github.event_name == 'release' }}
+  #   steps:
+  #     - name: Download attestation
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: "${{ needs.provenance.outputs.attestation-name }}"
 
-      - uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          files: |
-            ${{ needs.provenance.outputs.attestation-name }}
+  #     - uses: softprops/action-gh-release@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         files: |
+  #           ${{ needs.provenance.outputs.attestation-name }}
