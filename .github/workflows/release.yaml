@@ -58,8 +58,7 @@ jobs:
       compile-generator: true
       upload-assets: false
 
-  create-semantic-release:
-    name: release
+  release:
     runs-on: ubuntu-22.04
     needs:
       - prepare-artifacts
