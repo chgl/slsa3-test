@@ -12,7 +12,6 @@ jobs:
   prepare-artifacts:
     name: Prepare Artifacts
     runs-on: ubuntu-22.04
-    if: ${{ github.event_name == 'release' }}
     container: ghcr.io/chgl/kube-powertools:v1.19.12@sha256:e4a83ff88d1a8da75bdd9d3a7ba408a4cecc0da2088b8b1191bcb7e0f296a21c
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
@@ -86,7 +85,6 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-22.04
-    if: ${{ github.event_name == 'release' }}
     steps:
       - name: Download attestation
         uses: actions/download-artifact@v3
