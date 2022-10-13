@@ -4,29 +4,11 @@ on:
   push:
     branches:
       - master
-  release:
-    types:
-      - published
+  # release:
+  #   types:
+  #     - published
 
 jobs:
-  create-semantic-release:
-    name: release
-    runs-on: ubuntu-22.04
-    if: ${{ github.event_name != 'release' }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
-        with:
-          fetch-depth: 0
-
-      - name: Semantic Release
-        uses: cycjimmy/semantic-release-action@e1fe1fc00a3729593e87efb2f88475de76d64a24 # tag=v3.1.1
-        with:
-          extra_plugins: |
-            conventional-changelog-conventionalcommits@5.0.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   prepare-artifacts:
     name: Prepare Artifacts
     runs-on: ubuntu-22.04
@@ -63,7 +45,6 @@ jobs:
           path: dist/*.tar.gz
 
   provenance:
-    if: ${{ github.event_name == 'release' }}
     needs:
       - prepare-artifacts
     permissions:
@@ -75,23 +56,48 @@ jobs:
     with:
       base64-subjects: "${{ needs.prepare-artifacts.outputs.hashes }}"
       compile-generator: true
-      upload-assets: true
+      upload-assets: false
 
-  # upload-provenance-to-release:
-  #   needs: [provenance]
-  #   permissions:
-  #     contents: write
-  #   runs-on: ubuntu-22.04
-  #   if: ${{ github.event_name == 'release' }}
-  #   steps:
-  #     - name: Download attestation
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: "${{ needs.provenance.outputs.attestation-name }}"
+  create-semantic-release:
+    name: release
+    runs-on: ubuntu-22.04
+    needs:
+      - prepare-artifacts
+    outputs:
+      new-release-version: ${{ steps.semantic-release.outputs.new_release_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+        with:
+          fetch-depth: 0
 
-  #     - uses: softprops/action-gh-release@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         files: |
-  #           ${{ needs.provenance.outputs.attestation-name }}
+      - name: Semantic Release
+        id: semantic-release
+        uses: cycjimmy/semantic-release-action@e1fe1fc00a3729593e87efb2f88475de76d64a24 # tag=v3.1.1
+        with:
+          extra_plugins: |
+            conventional-changelog-conventionalcommits@5.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  upload-provenance-to-release:
+    needs:
+      - provenance
+      - release
+    permissions:
+      contents: write
+    runs-on: ubuntu-22.04
+    if: ${{ github.event_name == 'release' }}
+    steps:
+      - name: Download attestation
+        uses: actions/download-artifact@v3
+        with:
+          name: "${{ needs.provenance.outputs.attestation-name }}"
+
+      - uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ needs.release.outputs.new-release-version }}
+          files: |
+            ${{ needs.provenance.outputs.attestation-name }}
