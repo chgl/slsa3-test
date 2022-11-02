@@ -1,0 +1,48 @@
+name: CI notify
+
+# Only trigger, when the build/ci workflow succeeded
+# Note: This event will only trigger a workflow run if the workflow file is on the default branch.
+on:
+  workflow_run:
+    workflows:
+      - ci
+    types:
+      - completed
+
+permissions: read-all
+
+jobs:
+  prepare-artifacts:
+    runs-on: ubuntu-22.04
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
+    steps:
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+
+      - name: "Download artifact"
+        uses: actions/github-script@v6
+        with:
+          script: |
+            let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               run_id: context.payload.workflow_run.id,
+            });
+            let matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
+              return artifact.name == "pr_number"
+            })[0];
+            let download = await github.rest.actions.downloadArtifact({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               artifact_id: matchArtifact.id,
+               archive_format: 'zip',
+            });
+            let fs = require('fs');
+            fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/container-image-meta.zip`, Buffer.from(download.data));
+
+      - name: "Unzip artifact"
+        run: unzip container-image-meta.zip
+
+      - name: "Print container meta"
+        run: |
+          ls -lsa
