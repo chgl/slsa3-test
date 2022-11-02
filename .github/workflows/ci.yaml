@@ -1,0 +1,70 @@
+name: ci
+
+on:
+  push:
+    branches: [master]
+  release:
+    types: [created]
+  pull_request:
+    branches: [master]
+
+# Declare default permissions as read only.
+permissions: read-all
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-22.04
+    permissions:
+      packages: write
+      contents: read
+    outputs:
+      image-tags: ${{ steps.container_meta.outputs.tags }}
+      image-version: ${{ steps.container_meta.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3
+        with:
+          fetch-depth: 0
+
+      - name: Container meta for api image
+        id: container_meta
+        uses: docker/metadata-action@69f6fc9d46f2f8bf0d5491e4aabe0bb8c6a4678a # tag=v4
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@8b122486cedac8393e77aa9734c3528886e4a1a8 # tag=v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@dc7b9719a96d48369863986a06765841d7ea23f6 # tag=v2
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # tag=v2
+        if: ${{ github.event_name != 'pull_request' }}
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # can't use `load` and `push` at the same time, so differentiate by whether its a PR or not
+      - name: Build and push image
+        uses: docker/build-push-action@c84f38281176d4c9cdb1626ffafcd6b3911b5d94 # tag=v3
+        with:
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.container_meta.outputs.tags }}
+          labels: ${{ steps.container_meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: save container metadata as JSON file
+        run: |
+          echo ${{ toJSON(steps.container_meta.outputs.json) }} > container-image-meta.json
+
+      - name: Upload container image meta
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.1.0
+        with:
+          name: container-image-meta
+          path: |
+            container-image-meta.json
